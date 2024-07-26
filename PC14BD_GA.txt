@@ -1,0 +1,215 @@
+1.- ¿Cuántos empleados trabajan en el departamento de IT?
+
+-- Consulta para contar los empleados en el departamento de IT
+SELECT COUNT(*) AS empleados_it
+FROM EMPLOYEES e
+JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+WHERE d.DEPARTMENT_NAME = 'IT';
+
+===================================================================================
+2.- Consulta SQL para listar los nombres de los países y sus respectivas regiones, ordenados alfabéticamente por nombre de país:
+
+-- Listar países y regiones ordenados por nombre de país
+SELECT c.COUNTRY_NAME, r.REGION_NAME
+FROM COUNTRIES c
+JOIN REGIONS r ON c.REGION_ID = r.REGION_ID
+ORDER BY c.COUNTRY_NAME ASC;
+
+===================================================================================
+3.El salario promedio de los empleados contratados en 1998:
+
+-- Calcular el salario promedio de los empleados contratados en 1998
+SELECT AVG(SALARY) AS salario_promedio_1998
+FROM EMPLOYEES
+WHERE YEAR(HIRE_DATE) = 1998;
+
+============================================================================
+4.- Consulta SQL para mostrar el nombre y apellido de los empleados que tienen un salario mayor que el promedio de todos los salarios:
+
+-- Listar empleados con salario mayor al promedio
+SELECT FIRST_NAME, LAST_NAME
+FROM EMPLOYEES
+WHERE SALARY > (SELECT AVG(SALARY) FROM EMPLOYEES);
+
+==============================================================================
+5.-¿Cuántos departamentos no tienen un gerente asignado?
+-- Contar departamentos sin gerente asignado
+SELECT COUNT(*) AS departamentos_sin_gerente
+FROM DEPARTMENTS
+WHERE MANAGER_ID IS NULL;
+
+============================================================================
+6.- Consulta SQL para encontrar el empleado con el salario más alto en cada departamento:
+-- Consulta para encontrar el empleado con el salario más alto en cada departamento
+SELECT e.DEPARTMENT_ID, e.EMPLOYEE_ID, e.FIRST_NAME, e.LAST_NAME, e.SALARY
+FROM EMPLOYEES e
+INNER JOIN (
+    -- Subconsulta para obtener el salario máximo por departamento
+    SELECT DEPARTMENT_ID, MAX(SALARY) AS MAX_SALARY
+    FROM EMPLOYEES
+    GROUP BY DEPARTMENT_ID
+) max_sal ON e.DEPARTMENT_ID = max_sal.DEPARTMENT_ID AND e.SALARY = max_sal.MAX_SALARY
+ORDER BY e.DEPARTMENT_ID;
+
+===================================================================================
+7.-El departamento con la mayor diferencia entre el salario más alto y el más bajo:
+
+-- Consulta para encontrar el departamento con la mayor diferencia salarial
+SELECT TOP 1 d.DEPARTMENT_ID, d.DEPARTMENT_NAME, 
+             MAX(e.SALARY) - MIN(e.SALARY) AS SALARY_DIFFERENCE
+FROM DEPARTMENTS d
+JOIN EMPLOYEES e ON d.DEPARTMENT_ID = e.DEPARTMENT_ID
+GROUP BY d.DEPARTMENT_ID, d.DEPARTMENT_NAME
+ORDER BY SALARY_DIFFERENCE DESC;
+
+-- Esta consulta:
+-- 1. Agrupa los empleados por departamento
+-- 2. Calcula la diferencia entre el salario máximo y mínimo en cada grupo
+-- 3. Ordena los resultados de mayor a menor diferencia
+-- 4. Selecciona el primer resultado (TOP 1) para obtener la mayor diferencia
+
+=======================================================================================
+8. Consulta SQL para listar los nombres de los empleados que han tenido más de dos trabajos diferentes en la misma empresa:
+
+-- Consulta para empleados con más de dos trabajos diferentes
+SELECT e.EMPLOYEE_ID, e.FIRST_NAME, e.LAST_NAME, COUNT(DISTINCT jh.JOB_ID) AS JOB_COUNT
+FROM EMPLOYEES e
+JOIN JOB_HISTORY jh ON e.EMPLOYEE_ID = jh.EMPLOYEE_ID
+GROUP BY e.EMPLOYEE_ID, e.FIRST_NAME, e.LAST_NAME
+HAVING COUNT(DISTINCT jh.JOB_ID) > 2
+ORDER BY JOB_COUNT DESC;
+
+-- Esta consulta:
+-- 1. Une EMPLOYEES con JOB_HISTORY
+-- 2. Cuenta los trabajos distintos por empleado
+-- 3. Filtra los que tienen más de 2 trabajos
+-- 4. Ordena por cantidad de trabajos descendente
+
+========================================================================
+9.- El departamento que ha contratado el mayor número de empleados en el último año registrado:
+
+-- Encontrar el departamento con más contrataciones en el último año
+WITH ultimo_anio AS (
+    SELECT MAX(YEAR(HIRE_DATE)) AS anio
+    FROM EMPLOYEES
+)
+SELECT TOP 1 d.DEPARTMENT_NAME, COUNT(*) AS contrataciones
+FROM EMPLOYEES e
+JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+WHERE YEAR(e.HIRE_DATE) = (SELECT anio FROM ultimo_anio)
+GROUP BY d.DEPARTMENT_ID, d.DEPARTMENT_NAME
+ORDER BY contrataciones DESC;
+
+Version alternativa:
+====================
+-- Consulta para el departamento con más contrataciones en el último año
+WITH last_year AS (
+    -- Subconsulta para obtener el último año de contratación
+    SELECT DATEFORMAT(MAX(HIRE_DATE), 'yyyy') AS max_year FROM EMPLOYEES
+)
+SELECT TOP 1 d.DEPARTMENT_ID, d.DEPARTMENT_NAME, COUNT(*) AS hire_count
+FROM EMPLOYEES e
+JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+JOIN last_year ly ON 1=1
+WHERE DATEFORMAT(e.HIRE_DATE, 'yyyy') = ly.max_year
+GROUP BY d.DEPARTMENT_ID, d.DEPARTMENT_NAME
+ORDER BY hire_count DESC;
+
+-- Esta consulta:
+-- 1. Determina el último año de contratación
+-- 2. Cuenta las contrataciones por departamento en ese año
+-- 3. Ordena descendentemente y selecciona el top 1
+
+===============================================
+10.- Consulta SQL para mostrar el nombre y apellido de los empleados que ganan más que el promedio de su departamento:
+
+-- Consulta para empleados que ganan más que el promedio de su departamento
+SELECT e.EMPLOYEE_ID, e.FIRST_NAME, e.LAST_NAME, e.SALARY, e.DEPARTMENT_ID
+FROM EMPLOYEES e
+JOIN (
+    -- Subconsulta para calcular el salario promedio por departamento
+    SELECT DEPARTMENT_ID, AVG(SALARY) AS avg_salary
+    FROM EMPLOYEES
+    GROUP BY DEPARTMENT_ID
+) dept_avg ON e.DEPARTMENT_ID = dept_avg.DEPARTMENT_ID
+WHERE e.SALARY > dept_avg.avg_salary
+ORDER BY e.DEPARTMENT_ID, e.SALARY DESC;
+
+-- Esta consulta:
+-- 1. Calcula el salario promedio por departamento
+-- 2. Compara el salario de cada empleado con el promedio de su departamento
+-- 3. Filtra los empleados que ganan más que el promedio
+-- 4. Ordena por departamento y salario descendente
+
+========================================================================
+11.- Porcentaje de empleados que ganan más que el promedio de su departamento:
+-- Consulta para calcular el porcentaje de empleados sobre el promedio departamental
+WITH dept_avg AS (
+    -- Subconsulta para calcular el salario promedio por departamento
+    SELECT DEPARTMENT_ID, AVG(SALARY) AS avg_salary
+    FROM EMPLOYEES
+    GROUP BY DEPARTMENT_ID
+),
+above_avg AS (
+    -- Subconsulta para contar empleados sobre el promedio
+    SELECT COUNT(*) AS above_count
+    FROM EMPLOYEES e
+    JOIN dept_avg da ON e.DEPARTMENT_ID = da.DEPARTMENT_ID
+    WHERE e.SALARY > da.avg_salary
+)
+SELECT (CAST(above_count AS DECIMAL) / CAST((SELECT COUNT(*) FROM EMPLOYEES) AS DECIMAL) * 100) AS percentage
+FROM above_avg;
+
+-- Esta consulta:
+-- 1. Calcula el salario promedio por departamento
+-- 2. Cuenta empleados que ganan más que su promedio departamental
+-- 3. Calcula el porcentaje dividiendo por el total de empleados
+-- 4. Convierte a decimal para obtener resultado preciso
+
+==============================================================================
+12.- Número de empleados que han trabajado en al menos 3 departamentos diferentes:
+-- Consulta para contar empleados con al menos 3 departamentos diferentes
+SELECT COUNT(*) AS employees_count
+FROM (
+    -- Subconsulta para contar departamentos únicos por empleado
+    SELECT EMPLOYEE_ID
+    FROM (
+        -- Unión de departamentos actuales y pasados
+        SELECT EMPLOYEE_ID, DEPARTMENT_ID FROM EMPLOYEES
+        UNION
+        SELECT EMPLOYEE_ID, DEPARTMENT_ID FROM JOB_HISTORY
+    ) all_jobs
+    GROUP BY EMPLOYEE_ID
+    HAVING COUNT(DISTINCT DEPARTMENT_ID) >= 3
+) multi_dept_employees;
+
+-- Esta consulta:
+-- 1. Combina departamentos actuales (EMPLOYEES) y pasados (JOB_HISTORY)
+-- 2. Cuenta departamentos únicos por empleado
+-- 3. Filtra empleados con 3 o más departamentos
+-- 4. Cuenta el total de empleados que cumplen el criterio
+
+-Dado que puede salir "null value elminated in aggregate function", se puede corregir:
+-- Consulta para contar empleados con al menos 3 departamentos diferentes
+SELECT COUNT(*) AS employees_count
+FROM (
+   -- Subconsulta para contar departamentos únicos por empleado
+   SELECT EMPLOYEE_ID
+   FROM (
+       -- Unión de departamentos actuales y pasados
+       SELECT EMPLOYEE_ID, DEPARTMENT_ID FROM EMPLOYEES WHERE DEPARTMENT_ID IS NOT NULL
+       UNION
+       SELECT EMPLOYEE_ID, DEPARTMENT_ID FROM JOB_HISTORY WHERE DEPARTMENT_ID IS NOT NULL
+   ) all_jobs
+   GROUP BY EMPLOYEE_ID
+   HAVING COUNT(DISTINCT DEPARTMENT_ID) >= 3
+) multi_dept_employees;
+
+-- Agregamos WHERE DEPARTMENT_ID IS NOT NULL para evitar valores nulos
+-- Esto previene el mensaje "null value eliminated in aggregate function"
+
+
+
+
+
+

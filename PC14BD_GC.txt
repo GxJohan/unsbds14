@@ -1,0 +1,384 @@
+Básicas:
+
+1. ¿Cuántos empleados hay en cada puesto de trabajo?
+-- Consulta para contar empleados por puesto de trabajo
+SELECT 
+   j.JOB_TITLE,
+   COUNT(e.EMPLOYEE_ID) AS employee_count
+FROM 
+   JOBS j
+LEFT JOIN 
+   EMPLOYEES e ON j.JOB_ID = e.JOB_ID
+GROUP BY 
+   j.JOB_TITLE
+ORDER BY 
+   employee_count DESC;
+
+-- Esta consulta:
+-- 1. Usa LEFT JOIN para incluir puestos sin empleados
+-- 2. Cuenta empleados por puesto de trabajo
+-- 3. Agrupa por título del puesto
+-- 4. Ordena descendentemente por número de empleados
+=======================================================
+2. ¿Quiénes son los 5 empleados con los salarios más altos?
+-- Consulta para obtener los 5 empleados con salarios más altos
+SELECT TOP 5
+   EMPLOYEE_ID,
+   FIRST_NAME,
+   LAST_NAME,
+   SALARY
+FROM 
+   EMPLOYEES
+ORDER BY 
+   SALARY DESC;
+
+-- Esta consulta:
+-- 1. Selecciona los campos relevantes de la tabla EMPLOYEES
+-- 2. Usa TOP 5 para limitar el resultado a 5 filas
+-- 3. Ordena por salario de forma descendente
+-- 4. Muestra los 5 empleados con los salarios más altos
+==========================================================
+3. ¿Qué departamentos no tienen empleados?
+-- Consulta para encontrar departamentos sin empleados
+SELECT 
+   d.DEPARTMENT_ID,
+   d.DEPARTMENT_NAME
+FROM 
+   DEPARTMENTS d
+LEFT JOIN 
+   EMPLOYEES e ON d.DEPARTMENT_ID = e.DEPARTMENT_ID
+WHERE 
+   e.EMPLOYEE_ID IS NULL;
+
+-- Esta consulta:
+-- 1. Usa LEFT JOIN para incluir todos los departamentos
+-- 2. Filtra donde no hay empleados (EMPLOYEE_ID es NULL)
+-- 3. Muestra los departamentos que no tienen empleados asignados
+=====================================================
+4. ¿Cuál es el salario promedio de todos los empleados?
+a) $5,000 - $6,000
+b) $6,001 - $7,000
+c) $7,001 - $8,000
+d) Más de $8,000
+====
+-- Consulta para calcular el salario promedio de todos los empleados
+SELECT 
+   AVG(SALARY) AS average_salary
+FROM 
+   EMPLOYEES;
+
+-- Esta consulta:
+-- 1. Utiliza la función AVG para calcular el promedio de salarios
+-- 2. Selecciona de la tabla EMPLOYEES
+-- 3. Devuelve un único valor: el salario promedio de todos los empleados
+
+-- Para categorizar el resultado:
+SELECT
+   CASE
+       WHEN AVG(SALARY) BETWEEN 5000 AND 6000 THEN 'a) $5,000 - $6,000'
+       WHEN AVG(SALARY) BETWEEN 6001 AND 7000 THEN 'b) $6,001 - $7,000'
+       WHEN AVG(SALARY) BETWEEN 7001 AND 8000 THEN 'c) $7,001 - $8,000'
+       WHEN AVG(SALARY) > 8000 THEN 'd) Más de $8,000'
+       ELSE 'Menos de $5,000'
+   END AS salary_category
+FROM 
+   EMPLOYEES;
+
+-- Esta extensión:
+-- 1. Usa CASE para categorizar el salario promedio
+-- 2. Devuelve la categoría correspondiente al promedio calculado
+============================================================
+5. ¿Cuál es el total de salarios pagados por cada departamento?
+-- Consulta para calcular el total de salarios por departamento
+SELECT 
+   d.DEPARTMENT_ID,
+   d.DEPARTMENT_NAME,
+   COALESCE(SUM(e.SALARY), 0) AS total_salary
+FROM 
+   DEPARTMENTS d
+LEFT JOIN 
+   EMPLOYEES e ON d.DEPARTMENT_ID = e.DEPARTMENT_ID
+GROUP BY 
+   d.DEPARTMENT_ID, d.DEPARTMENT_NAME
+ORDER BY 
+   total_salary DESC;
+
+-- Esta consulta:
+-- 1. Usa LEFT JOIN para incluir departamentos sin empleados
+-- 2. Utiliza SUM para calcular el total de salarios
+-- 3. COALESCE maneja casos donde no hay empleados (suma NULL)
+-- 4. Agrupa por departamento
+-- 5. Ordena por total de salarios de mayor a menor
+==============================================================
+6. ¿Qué empleados tienen dependientes?
+-- Consulta para encontrar empleados con dependientes
+SELECT DISTINCT
+    e.EMPLOYEE_ID,
+    e.FIRST_NAME,
+    e.LAST_NAME
+FROM 
+    EMPLOYEES e
+JOIN 
+    DEPENDENTS d ON e.EMPLOYEE_ID = d.EMPLOYEE_ID
+ORDER BY 
+    e.EMPLOYEE_ID;
+
+-- Esta consulta:
+-- 1. Usa JOIN para relacionar EMPLOYEES con DEPENDENTS
+-- 2. DISTINCT evita duplicados si un empleado tiene múltiples dependientes
+-- 3. Selecciona información básica del empleado
+-- 4. Ordena por ID de empleado para una presentación consistente
+
+-- Nota: Si la tabla DEPENDENTS no existe, una alternativa podría ser:
+-- SELECT * FROM EMPLOYEES WHERE COMMISSION_PCT IS NOT NULL;
+-- Asumiendo que los empleados con comisión tienen dependientes
+======================
+-- Consulta para encontrar empleados que potencialmente tienen dependientes
+SELECT 
+    EMPLOYEE_ID,
+    FIRST_NAME,
+    LAST_NAME,
+    COMMISSION_PCT
+FROM 
+    EMPLOYEES
+WHERE 
+    COMMISSION_PCT IS NOT NULL
+ORDER BY 
+    COMMISSION_PCT DESC;
+
+-- Esta consulta:
+-- 1. Selecciona empleados que tienen un porcentaje de comisión
+-- 2. Asume que tener comisión podría indicar tener dependientes
+-- 3. Incluye el porcentaje de comisión para referencia
+-- 4. Ordena por comisión descendente (mayor probabilidad primero)
+
+-- Nota: Esta es una aproximación y no una determinación precisa
+-- En un sistema real, se necesitaría una tabla específica de dependientes
+
+
+====================================================================
+
+Fechas:
+
+7. ¿Qué empleados fueron contratados en los últimos 6 meses?
+-- Consulta para encontrar empleados contratados en los últimos 6 meses
+SELECT 
+   EMPLOYEE_ID,
+   FIRST_NAME,
+   LAST_NAME,
+   HIRE_DATE
+FROM 
+   EMPLOYEES
+WHERE 
+   HIRE_DATE >= DATEADD(month, -6, GETDATE())
+ORDER BY 
+   HIRE_DATE DESC;
+
+-- Esta consulta:
+-- 1. Utiliza DATEADD para calcular la fecha de 6 meses atrás
+-- 2. GETDATE() obtiene la fecha actual
+-- 3. Filtra empleados con HIRE_DATE en los últimos 6 meses
+-- 4. Ordena por fecha de contratación, más recientes primero
+
+-- Nota: GETDATE() es específico de SQL Server. Para SQL Anywhere, usar:
+-- WHERE HIRE_DATE >= DATEADD(month, -6, CURRENT DATE)
+================================================================
+
+8. ¿Qué departamento tiene el promedio de antigüedad más alto?
+a) Ventas
+b) Recursos Humanos
+c) Tecnología
+d) Finanzas
+====
+-- Consulta para encontrar el departamento con el promedio de antigüedad más alto
+SELECT TOP 1
+   d.DEPARTMENT_ID,
+   d.DEPARTMENT_NAME,
+   AVG(DATEDIFF(month, e.HIRE_DATE, CURRENT DATE)) AS avg_tenure_months
+FROM 
+   DEPARTMENTS d
+JOIN 
+   EMPLOYEES e ON d.DEPARTMENT_ID = e.DEPARTMENT_ID
+GROUP BY 
+   d.DEPARTMENT_ID, d.DEPARTMENT_NAME
+ORDER BY 
+   avg_tenure_months DESC;
+
+-- Esta consulta:
+-- 1. Usa DATEDIFF para calcular meses desde la contratación hasta hoy
+-- 2. AVG calcula el promedio de antigüedad por departamento
+-- 3. JOIN relaciona DEPARTMENTS con EMPLOYEES
+-- 4. GROUP BY agrupa por departamento
+-- 5. ORDER BY y TOP 1 seleccionan el departamento con mayor antigüedad
+
+-- Para categorizar el resultado:
+SELECT
+   CASE
+       WHEN DEPARTMENT_NAME = 'Sales' THEN 'a) Ventas'
+       WHEN DEPARTMENT_NAME = 'Human Resources' THEN 'b) Recursos Humanos'
+       WHEN DEPARTMENT_NAME = 'IT' THEN 'c) Tecnología'
+       WHEN DEPARTMENT_NAME = 'Finance' THEN 'd) Finanzas'
+       ELSE 'Otro departamento'
+   END AS department_category
+FROM (
+   -- Subconsulta con el cálculo de antigüedad
+) subquery;
+
+-- Esta extensión categoriza el resultado según las opciones dadas
+=====================================================================
+
+9. ¿Qué empleados celebran su aniversario laboral el próximo mes?
+-- Consulta para encontrar empleados que celebran aniversario el próximo mes
+SELECT 
+   EMPLOYEE_ID,
+   FIRST_NAME,
+   LAST_NAME,
+   HIRE_DATE,
+   DATEADD(year, DATEDIFF(year, HIRE_DATE, CURRENT DATE) + 1, HIRE_DATE) AS next_anniversary
+FROM 
+   EMPLOYEES
+WHERE 
+   MONTH(DATEADD(year, DATEDIFF(year, HIRE_DATE, CURRENT DATE) + 1, HIRE_DATE)) 
+   = MONTH(DATEADD(month, 1, CURRENT DATE))
+ORDER BY 
+   DAY(HIRE_DATE);
+
+-- Esta consulta:
+-- 1. Calcula la fecha del próximo aniversario para cada empleado
+-- 2. Compara el mes del próximo aniversario con el mes siguiente
+-- 3. DATEADD(month, 1, CURRENT DATE) obtiene el mes siguiente
+-- 4. Filtra empleados cuyo aniversario cae en el próximo mes
+-- 5. Ordena por día del mes para listar cronológicamente
+
+-- Nota: En SQL Anywhere, MONTH() y DAY() son funciones válidas
+-- CURRENT DATE se usa en lugar de GETDATE() para SQL Anywhere
+=======================================================================
+
+Avanzadas:
+10. ¿Cuál es el segundo salario más alto en cada departamento?
+-- Consulta para encontrar el segundo salario más alto en cada departamento
+WITH ranked_salaries AS (
+   SELECT 
+       DEPARTMENT_ID,
+       SALARY,
+       DENSE_RANK() OVER (PARTITION BY DEPARTMENT_ID ORDER BY SALARY DESC) AS salary_rank
+   FROM 
+       EMPLOYEES
+)
+SELECT 
+   r.DEPARTMENT_ID,
+   d.DEPARTMENT_NAME,
+   r.SALARY AS second_highest_salary
+FROM 
+   ranked_salaries r
+JOIN 
+   DEPARTMENTS d ON r.DEPARTMENT_ID = d.DEPARTMENT_ID
+WHERE 
+   r.salary_rank = 2;
+
+-- Esta consulta:
+-- 1. Usa CTE (WITH) para crear una tabla temporal con salarios rankeados
+-- 2. DENSE_RANK() asigna rangos a salarios dentro de cada departamento
+-- 3. PARTITION BY DEPARTMENT_ID agrupa por departamento
+-- 4. ORDER BY SALARY DESC ordena salarios de mayor a menor
+-- 5. Filtra para obtener solo el segundo salario más alto (rank = 2)
+-- 6. JOIN con DEPARTMENTS para incluir nombres de departamentos
+
+-- Nota: Si un departamento no tiene un segundo salario más alto,
+-- no aparecerá en los resultados
+========================================================================
+
+11. ¿En qué porcentaje salarial está cada empleado dentro de su departamento?
+-- Consulta para calcular el percentil salarial de cada empleado en su departamento
+WITH salary_stats AS (
+   SELECT 
+       DEPARTMENT_ID, 
+       MIN(SALARY) AS min_salary,
+       MAX(SALARY) AS max_salary
+   FROM 
+       EMPLOYEES
+   GROUP BY 
+       DEPARTMENT_ID
+)
+SELECT 
+   e.EMPLOYEE_ID,
+   e.FIRST_NAME,
+   e.LAST_NAME,
+   e.DEPARTMENT_ID,
+   d.DEPARTMENT_NAME,
+   e.SALARY,
+   CAST(
+       (e.SALARY - s.min_salary) * 100.0 / 
+       NULLIF((s.max_salary - s.min_salary), 0) 
+   AS DECIMAL(5,2)) AS salary_percentile
+FROM 
+   EMPLOYEES e
+JOIN 
+   DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+JOIN 
+   salary_stats s ON e.DEPARTMENT_ID = s.DEPARTMENT_ID
+ORDER BY 
+   e.DEPARTMENT_ID, salary_percentile DESC;
+
+-- Esta consulta:
+-- 1. Usa CTE para calcular salarios mín y máx por departamento
+-- 2. Calcula el percentil: (salario - mínimo) / (máximo - mínimo) * 100
+-- 3. NULLIF evita división por cero si min = max
+-- 4. CAST formatea el resultado a 2 decimales
+-- 5. JOIN con DEPARTMENTS para incluir nombres de departamentos
+-- 6. Ordena por departamento y percentil descendente
+
+-- Nota: 0% significa salario más bajo, 100% el más alto del departamento
+===========================================================================
+
+12. ¿Cuál es la cadena de mando en cada departamento?
+-- Consulta para mostrar la cadena de mando en cada departamento
+WITH RECURSIVE emp_hierarchy (EMPLOYEE_ID, FIRST_NAME, LAST_NAME, MANAGER_ID, DEPARTMENT_ID, LEVEL, HIERARCHY) AS (
+    -- Caso base: empleados de nivel superior (sin manager)
+    SELECT 
+        EMPLOYEE_ID, 
+        FIRST_NAME, 
+        LAST_NAME, 
+        MANAGER_ID, 
+        DEPARTMENT_ID, 
+        0 AS LEVEL,
+        CAST(FIRST_NAME || ' ' || LAST_NAME AS VARCHAR(1000)) AS HIERARCHY
+    FROM 
+        EMPLOYEES
+    WHERE 
+        MANAGER_ID IS NULL
+
+    UNION ALL
+
+    -- Caso recursivo: empleados con sus managers
+    SELECT 
+        e.EMPLOYEE_ID, 
+        e.FIRST_NAME, 
+        e.LAST_NAME, 
+        e.MANAGER_ID, 
+        e.DEPARTMENT_ID,
+        eh.LEVEL + 1,
+        CAST(eh.HIERARCHY || ' > ' || e.FIRST_NAME || ' ' || e.LAST_NAME AS VARCHAR(1000))
+    FROM 
+        EMPLOYEES e
+    JOIN 
+        emp_hierarchy eh ON e.MANAGER_ID = eh.EMPLOYEE_ID
+)
+SELECT 
+    d.DEPARTMENT_ID,
+    d.DEPARTMENT_NAME,
+    eh.HIERARCHY AS command_chain
+FROM 
+    emp_hierarchy eh
+JOIN 
+    DEPARTMENTS d ON eh.DEPARTMENT_ID = d.DEPARTMENT_ID
+ORDER BY 
+    d.DEPARTMENT_ID, eh.LEVEL;
+
+-- Esta consulta:
+-- 1. Define explícitamente las columnas en la CTE recursiva
+-- 2. Mantiene la misma lógica de construcción de jerarquía
+-- 3. Usa CAST para manejar la concatenación de strings
+-- 4. Une los resultados con DEPARTMENTS para mostrar nombres de departamentos
+-- 5. Ordena por departamento y nivel jerárquico
+========================================================================

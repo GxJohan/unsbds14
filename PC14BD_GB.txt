@@ -1,0 +1,238 @@
+1.- ¿Cuántos empleados trabajan en el departamento de IT?
+
+-- Consulta para contar los empleados en el departamento de IT
+SELECT COUNT(*) AS empleados_it
+FROM EMPLOYEES e
+JOIN DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+WHERE d.DEPARTMENT_NAME = 'IT';
+
+===================================================================================
+2.- Consulta SQL para listar los nombres de los países y sus respectivas regiones, ordenados alfabéticamente por nombre de país:
+
+-- Listar países y regiones ordenados por nombre de país
+SELECT c.COUNTRY_NAME, r.REGION_NAME
+FROM COUNTRIES c
+JOIN REGIONS r ON c.REGION_ID = r.REGION_ID
+ORDER BY c.COUNTRY_NAME ASC;
+
+===================================================================================
+3.El salario promedio de los empleados contratados en 1998:
+
+-- Calcular el salario promedio de los empleados contratados en 1998
+SELECT AVG(SALARY) AS salario_promedio_1998
+FROM EMPLOYEES
+WHERE YEAR(HIRE_DATE) = 1998;
+
+============================================================================
+4.- Consulta SQL para mostrar el nombre y apellido de los empleados que tienen un salario mayor que el promedio de todos los salarios:
+
+-- Listar empleados con salario mayor al promedio
+SELECT FIRST_NAME, LAST_NAME
+FROM EMPLOYEES
+WHERE SALARY > (SELECT AVG(SALARY) FROM EMPLOYEES);
+
+==============================================================================
+5.-¿Cuántos departamentos no tienen un gerente asignado?
+-- Contar departamentos sin gerente asignado
+SELECT COUNT(*) AS departamentos_sin_gerente
+FROM DEPARTMENTS
+WHERE MANAGER_ID IS NULL;
+
+============================================================================
+6.- Consulta SQL para encontrar el empleado con el salario más alto en cada departamento:
+-- Consulta para encontrar el empleado con el salario más alto en cada departamento
+SELECT e.DEPARTMENT_ID, e.EMPLOYEE_ID, e.FIRST_NAME, e.LAST_NAME, e.SALARY
+FROM EMPLOYEES e
+INNER JOIN (
+    -- Subconsulta para obtener el salario máximo por departamento
+    SELECT DEPARTMENT_ID, MAX(SALARY) AS MAX_SALARY
+    FROM EMPLOYEES
+    GROUP BY DEPARTMENT_ID
+) max_sal ON e.DEPARTMENT_ID = max_sal.DEPARTMENT_ID AND e.SALARY = max_sal.MAX_SALARY
+ORDER BY e.DEPARTMENT_ID;
+
+===================================================================================
+7. Escribe una consulta SQL para mostrar el número de empleados en cada departamento, junto con el nombre del departamento, ordenado de mayor a menor número de empleados.
+-- Consulta para mostrar el número de empleados por departamento
+SELECT 
+   d.DEPARTMENT_ID,
+   d.DEPARTMENT_NAME,
+   COUNT(e.EMPLOYEE_ID) AS employee_count
+FROM 
+   DEPARTMENTS d
+LEFT JOIN 
+   EMPLOYEES e ON d.DEPARTMENT_ID = e.DEPARTMENT_ID
+GROUP BY 
+   d.DEPARTMENT_ID, d.DEPARTMENT_NAME
+ORDER BY 
+   employee_count DESC;
+
+-- Esta consulta:
+-- 1. Usa LEFT JOIN para incluir departamentos sin empleados
+-- 2. Cuenta empleados por departamento
+-- 3. Agrupa por ID y nombre del departamento
+-- 4. Ordena descendentemente por número de empleados
+
+=======================================================
+8. ¿Cuántos empleados tienen un salario mayor que el promedio de su departamento?
+-- Consulta para contar empleados con salario mayor al promedio de su departamento
+WITH dept_avg AS (
+   -- Subconsulta para calcular el salario promedio por departamento
+   SELECT DEPARTMENT_ID, AVG(SALARY) AS avg_salary
+   FROM EMPLOYEES
+   GROUP BY DEPARTMENT_ID
+)
+SELECT COUNT(*) AS above_avg_count
+FROM EMPLOYEES e
+JOIN dept_avg da ON e.DEPARTMENT_ID = da.DEPARTMENT_ID
+WHERE e.SALARY > da.avg_salary;
+
+-- Esta consulta:
+-- 1. Calcula el salario promedio por departamento
+-- 2. Compara el salario de cada empleado con el promedio
+-- 3. Cuenta los empleados que superan el promedio
+===========================================================================
+9. Escribe una consulta SQL para encontrar el empleado con el salario más alto en cada departamento.
+-- Consulta para encontrar el empleado con el salario más alto en cada departamento
+SELECT 
+   e.DEPARTMENT_ID,
+   d.DEPARTMENT_NAME,
+   e.EMPLOYEE_ID,
+   e.FIRST_NAME,
+   e.LAST_NAME,
+   e.SALARY
+FROM 
+   EMPLOYEES e
+JOIN 
+   DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+JOIN (
+   -- Subconsulta para obtener el salario máximo por departamento
+   SELECT DEPARTMENT_ID, MAX(SALARY) AS max_salary
+   FROM EMPLOYEES
+   GROUP BY DEPARTMENT_ID
+) max_sal ON e.DEPARTMENT_ID = max_sal.DEPARTMENT_ID 
+   AND e.SALARY = max_sal.max_salary
+ORDER BY 
+   e.DEPARTMENT_ID;
+
+-- Esta consulta:
+-- 1. Usa una subconsulta para encontrar el salario máximo por departamento
+-- 2. Une los resultados con la tabla EMPLOYEES para obtener los detalles del empleado
+-- 3. Incluye el nombre del departamento de la tabla DEPARTMENTS
+-- 4. Ordena los resultados por ID de departamento
+===================================================================================================
+
+10. Escribe una consulta SQL para listar los nombres de los gerentes que supervisan a más de 5 empleados, junto con el número de empleados que supervisan.
+-- Consulta para listar gerentes que supervisan más de 5 empleados
+SELECT 
+   m.EMPLOYEE_ID AS manager_id,
+   m.FIRST_NAME AS manager_first_name,
+   m.LAST_NAME AS manager_last_name,
+   COUNT(e.EMPLOYEE_ID) AS employees_supervised
+FROM 
+   EMPLOYEES m
+JOIN 
+   EMPLOYEES e ON m.EMPLOYEE_ID = e.MANAGER_ID
+GROUP BY 
+   m.EMPLOYEE_ID, m.FIRST_NAME, m.LAST_NAME
+HAVING 
+   COUNT(e.EMPLOYEE_ID) > 5
+ORDER BY 
+   employees_supervised DESC;
+
+-- Esta consulta:
+-- 1. Une la tabla EMPLOYEES consigo misma para relacionar gerentes y empleados
+-- 2. Agrupa por gerente y cuenta los empleados supervisados
+-- 3. Filtra gerentes con más de 5 empleados usando HAVING
+-- 4. Ordena por número de empleados supervisados de forma descendente
+======================================================================================================
+
+11.-El departamento con la mayor diferencia entre el salario más alto y el más bajo:
+
+-- Consulta para encontrar el departamento con la mayor diferencia salarial
+SELECT TOP 1 d.DEPARTMENT_ID, d.DEPARTMENT_NAME, 
+             MAX(e.SALARY) - MIN(e.SALARY) AS SALARY_DIFFERENCE
+FROM DEPARTMENTS d
+JOIN EMPLOYEES e ON d.DEPARTMENT_ID = e.DEPARTMENT_ID
+GROUP BY d.DEPARTMENT_ID, d.DEPARTMENT_NAME
+ORDER BY SALARY_DIFFERENCE DESC;
+
+-- Esta consulta:
+-- 1. Agrupa los empleados por departamento
+-- 2. Calcula la diferencia entre el salario máximo y mínimo en cada grupo
+-- 3. Ordena los resultados de mayor a menor diferencia
+-- 4. Selecciona el primer resultado (TOP 1) para obtener la mayor diferencia
+
+=======================================================================================
+12. ¿Cuál es el departamento con el mayor número de empleados que ganan más de $10,000?
+-- Consulta para encontrar el departamento con más empleados que ganan >$10,000
+SELECT TOP 1
+   d.DEPARTMENT_ID,
+   d.DEPARTMENT_NAME,
+   COUNT(*) AS high_earners_count
+FROM 
+   EMPLOYEES e
+JOIN 
+   DEPARTMENTS d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+WHERE 
+   e.SALARY > 10000
+GROUP BY 
+   d.DEPARTMENT_ID, d.DEPARTMENT_NAME
+ORDER BY 
+   high_earners_count DESC;
+
+-- Esta consulta:
+-- 1. Filtra empleados con salario > $10,000
+-- 2. Agrupa por departamento y cuenta empleados que cumplen el criterio
+-- 3. Ordena descendentemente por número de empleados
+-- 4. Selecciona el top 1 para obtener el departamento con más empleados
+=====================================================================
+
+13. Consulta SQL para listar los nombres de los empleados que han tenido más de dos trabajos diferentes en la misma empresa:
+
+-- Consulta para empleados con más de dos trabajos diferentes
+SELECT e.EMPLOYEE_ID, e.FIRST_NAME, e.LAST_NAME, COUNT(DISTINCT jh.JOB_ID) AS JOB_COUNT
+FROM EMPLOYEES e
+JOIN JOB_HISTORY jh ON e.EMPLOYEE_ID = jh.EMPLOYEE_ID
+GROUP BY e.EMPLOYEE_ID, e.FIRST_NAME, e.LAST_NAME
+HAVING COUNT(DISTINCT jh.JOB_ID) > 2
+ORDER BY JOB_COUNT DESC;
+
+-- Esta consulta:
+-- 1. Une EMPLOYEES con JOB_HISTORY
+-- 2. Cuenta los trabajos distintos por empleado
+-- 3. Filtra los que tienen más de 2 trabajos
+-- 4. Ordena por cantidad de trabajos descendente
+
+========================================================================
+14. Escribe una consulta SQL para mostrar el nombre y apellido de los empleados que ganan más que el promedio de su departamento, junto con la diferencia entre su salario y el promedio del departamento.
+
+-- Consulta para empleados que ganan más que el promedio de su departamento
+WITH dept_avg AS (
+   -- Subconsulta para calcular el salario promedio por departamento
+   SELECT DEPARTMENT_ID, AVG(SALARY) AS avg_salary
+   FROM EMPLOYEES
+   GROUP BY DEPARTMENT_ID
+)
+SELECT 
+   e.EMPLOYEE_ID,
+   e.FIRST_NAME,
+   e.LAST_NAME,
+   e.SALARY,
+   e.DEPARTMENT_ID,
+   e.SALARY - da.avg_salary AS salary_difference
+FROM 
+   EMPLOYEES e
+JOIN 
+   dept_avg da ON e.DEPARTMENT_ID = da.DEPARTMENT_ID
+WHERE 
+   e.SALARY > da.avg_salary
+ORDER BY 
+   e.DEPARTMENT_ID, salary_difference DESC;
+
+-- Esta consulta:
+-- 1. Calcula el salario promedio por departamento en una CTE
+-- 2. Une los resultados con EMPLOYEES
+-- 3. Calcula la diferencia entre salario y promedio
+-- 4. Filtra empleados que ganan más que el promedio
+-- 5. Ordena por departamento y diferencia salarial
